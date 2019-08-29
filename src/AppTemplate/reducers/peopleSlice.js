@@ -1,4 +1,5 @@
 import {createSlice, createSelector} from 'redux-starter-kit';
+import immutable from 'immutable';
 
 import delay from '../../utils/delay';
 
@@ -19,6 +20,8 @@ const peopleSlice = createSlice({
     person: (getInitialFetchedServerData() || {}).person || null,
     isLoading: false,
     errors: [],
+
+    _update: new Date().toISOString(),
   },
 
   reducers: {
@@ -38,7 +41,7 @@ const peopleSlice = createSlice({
 
 export const selectPeople = createSelector(
     [peopleSlice.selectors.getPeople],
-    (state) => state
+    (state) => immutable.fromJS(state).toJS()
 );
 
 export function fetchPerson(personId) {
