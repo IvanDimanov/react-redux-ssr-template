@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "alias": "react-redux-ssr-template.now.sh",
+
+  "builds": [
+    { "src": "./package.json", "use": "@now/static-build" }
+  ],
+
+  "routes": [
+    { "src": "^[^\\.]+$", "dest": "/" }
+  ]
+}

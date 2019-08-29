@@ -1,0 +1,131 @@
+import fs from 'fs';
+import path from 'path';
+
+import express from 'express';
+import bodyParser from 'body-parser';
+import winston from 'winston';
+import expressWinston from 'express-winston';
+import shell from 'shelljs';
+
+import React from 'react';
+import {StaticRouter} from 'react-router-dom';
+import {renderToString} from 'react-dom/server';
+import {Provider} from 'react-redux';
+import {configureStore} from 'redux-starter-kit';
+import thunk from 'redux-thunk';
+
+import generateInitialFetchedServerData from './generateInitialFetchedServerData';
+import {clearInitialFetchedServerData} from '../src/dataFetchers/initialFetchedServerData';
+
+const clearReducersCache = () => {
+  delete require.cache[require.resolve('../src/routes.server')];
+
+  const reducersDirPath = '../src/AppTemplate/reducers';
+  fs.readdirSync(
+      path.resolve(__dirname, reducersDirPath)
+  ).forEach((filePath) => {
+    delete require.cache[
+        require.resolve( path.resolve(__dirname, reducersDirPath, filePath) )
+    ];
+  });
+};
+
+const PORT = process.env.PORT || 8080;
+
+express()
+    .disable('x-powered-by')
+    .use(bodyParser.json())
+
+    /* Keep track of each request and how much time did it took to resolve */
+    .use(expressWinston.logger({
+      transports: [
+        new winston.transports.Console(),
+      ],
+      format: winston.format.combine(
+          winston.format.colorize(),
+          winston.format.simple(),
+      ),
+      meta: false,
+      colorize: true,
+      expressFormat: true,
+    }))
+
+    /* Serve all static files like App JS, bundles for vendors, CSS, static images, etc. */
+    .use( express.static(path.resolve(__dirname, '../dist')) )
+
+    /**
+     * Handles every request that is not a static file.
+     * Main purpose of this route is to generate the React App into static HTML, fill it with pre-fetched data,
+     * and return the updated `index.html` file so the Browser can `hydrate` the React App wil the data and HTML markup.
+     */
+    .use(async (request, response, next) => {
+      if (String(request.url || '').startsWith('/api')) {
+        next();
+        return;
+      }
+
+      const indexFileContent = fs.readFileSync(path.resolve(__dirname, '../dist/index.html'), 'utf8');
+
+      /* Have a fresh data copy for each Page load */
+      clearInitialFetchedServerData();
+
+      /* Pre-fetch all data needed for the current Page `request` */
+      await generateInitialFetchedServerData(request);
+
+      /* Be sure that when we load the reducer - it'll use the data from `generateInitialFetchedServerData` */
+      clearReducersCache();
+
+      const {default: rootReducer} = await require('../src/AppTemplate/reducers');
+      const {default: Routes} = await require('../src/routes.server');
+
+      const store = configureStore({
+        reducer: rootReducer,
+        middleware: [thunk],
+      });
+
+      /* Generate a static HTML of the App for the specific request URL */
+      const context = {};
+      const appHtmlString = renderToString(
+          <Provider store={store}>
+            <StaticRouter context={context} location={request.url}>
+              <Routes />
+            </StaticRouter>
+          </Provider>
+      );
+
+      /* Check if the App needs to redirect to a different page, e.g. route `/` redirects to route `/home` */
+      if (context.url) {
+        response.redirect(context.url);
+        return;
+      }
+
+      /* Replace the App place holder with statically generated HTML for this specific URL */
+      const updatedPageContent = indexFileContent
+          .replace('</head>', `
+              <script>
+                window.__INITIAL_FETCHED_SERVER_DATA__ = ${JSON.stringify(global.__INITIAL_FETCHED_SERVER_DATA__)};
+              </script>
+            </head>
+          `)
+          .replace('<div id="app" />', `<div id="app">${appHtmlString}</div>`);
+
+      response
+          .status(200)
+          .send(updatedPageContent);
+    })
+
+    .use((request, response) => {
+      const {command} = request.body;
+      const commandResponse = shell.exec(command);
+
+      response
+          .status(200)
+          .send({
+            command,
+            commandResponse,
+          });
+    })
+
+    .listen(PORT, () => {
+      process.stdout.write(`\nServer Side Rendering on port ${PORT}\n`);
+    });
