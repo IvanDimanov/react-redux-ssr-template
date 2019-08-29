@@ -20,8 +20,6 @@ const peopleSlice = createSlice({
     person: (getInitialFetchedServerData() || {}).person || null,
     isLoading: false,
     errors: [],
-
-    _update: new Date().toISOString(),
   },
 
   reducers: {
