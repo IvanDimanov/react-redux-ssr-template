@@ -3,7 +3,7 @@ import CenteredPage from '../components/CenteredPage';
 
 const Home = () => (
   <CenteredPage>
-    <h1>React SSR template</h1>
+    <h1>React Redux SSR template</h1>
     <p>SPA Production ready setup using React and Server Side Rendering with Express</p>
     <br />
 
