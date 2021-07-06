@@ -89,7 +89,7 @@ const People = () => {
           className="m-2"
           style={styles.button}
           variant='outline-dark'
-          onClick={onClickHandler(getRandomNumber(1, 88))}
+          onClick={onClickHandler(getRandomNumber(1, 83))}
           disabled={isLoading}
         >
           Random ?
@@ -122,7 +122,7 @@ const People = () => {
           className="m-2"
           style={styles.button}
           variant='danger'
-          onClick={onClickHandler(89)}
+          onClick={onClickHandler(100)}
           disabled={isLoading}
         >
           Response Error

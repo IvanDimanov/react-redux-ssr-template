@@ -8,7 +8,8 @@ SPA Production ready setup using React and Server Side Rendering with Express
 ```
 git clone git@github.com:IvanDimanov/react-redux-ssr-template.git
 cd react-redux-ssr-template
-npm install
+cp .env-template .env
+npm ci
 npm run local-development
 ```
 

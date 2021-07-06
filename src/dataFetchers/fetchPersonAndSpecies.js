@@ -2,7 +2,7 @@ import request from './request';
 
 const fetchPersonAndSpecies = async (personId) => {
   /* Fetch general Person data like `name`, `height`, `mass` */
-  const {data: personData} = await request.get(`https://swapi.co/api/people/${personId}/`);
+  const {data: personData} = await request.get(`https://swapi.dev/api/people/${personId}/`);
   // const personData = {"name":"BB8","height":"unknown","mass":"unknown","hair_color":"none","skin_color":"none","eye_color":"black","birth_year":"unknown","gender":"none","homeworld":"https://swapi.co/api/planets/28/","films":["https://swapi.co/api/films/7/"],"species":["https://swapi.co/api/species/2/"],"vehicles":[],"starships":[],"created":"2015-04-17T06:57:38.061346Z","edited":"2015-04-17T06:57:38.061453Z","url":"https://swapi.co/api/people/87/"};
 
   /* Fetch all the species that are related to the Person */
